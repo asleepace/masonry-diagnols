@@ -1,4 +1,4 @@
-# Masonry Diagnols
+# Masonry Diagonal
 
 https://github.com/user-attachments/assets/56608e7d-e961-4dfb-ab21-23ca07f586a4
 
