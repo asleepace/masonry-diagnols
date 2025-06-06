@@ -11,30 +11,42 @@ type BoxProps = {
   onClick: () => void;
 };
 
-function Box(props: BoxProps) {
+// --- hooks --- 
 
-  const onRefCallback = (box: HTMLDivElement) => {
-    if (!box || props.scaledDiagonal) return;
-    const scale = getScaledDiagonal(box.clientWidth, box.clientHeight);
-    props.onDiagnol(scale);
-  }
+function useNumberOfColumns() {
+  const [numberOfColumns, setNumberOfColumns] = React.useState(getNumberOfColumns(window.innerWidth));
+  React.useEffect(() => {
+    const handleResize = () => setNumberOfColumns(getNumberOfColumns(window.innerWidth));
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
-  return (
-    <a onClick={props.onClick}>
-      <div
-        className="masonry-box min-w-12 text-black mb-4 flex justify-center items-center rounded-xs"
-        ref={onRefCallback}
-        style={{
-          width: "100%",
-          height: props.height,
-          backgroundColor: props.color,
-        }}
-      >
-        <p className="text-black text-2xl font-bold">{Math.round(props.height)}px</p>
-      </div>
-    </a>
-  );
+  return numberOfColumns;
 }
+
+// --- box element ---
+
+const Box = (props: BoxProps) => (
+  <a onClick={props.onClick}>
+    <div
+      className="masonry-box min-w-24 max-w-64 w-full text-black mb-4 flex justify-center items-center rounded-xs"
+      style={{
+        height: props.height,
+        backgroundColor: props.color,
+      }}
+      ref={(box: HTMLDivElement) => {
+        if (!box || props.scaledDiagonal) return;
+        props.onDiagnol(getScaledDiagonal(box.clientWidth, box.clientHeight));
+      }}
+    >
+      <p className="text-black text-center text-2xl font-bold">
+        <span className="text-black/75 text-sm mb-2">#{props.index}</span>
+        <br />
+        {Math.round(props.height)}px
+      </p>
+    </div>
+  </a>
+)
 
 // --- utils ---
 
@@ -59,18 +71,29 @@ const getScaledDiagonal = (width: number, height: number) => {
 const getRandomHeight = ({
   min = 80,
   max = 160,
-}: { min?: number; max?: number } = {}) =>
-  min + Math.floor(Math.random() * max);
+}: { min?: number; max?: number } = {}) => {
+  return min + Math.floor(Math.random() * max);
+}
 
-const getRandomColor = () =>
-  `hsl(${Math.floor(Math.random() * 360)}, 70%, 80%)`;
+const getRandomColor = () => {
+  return `hsl(${Math.floor(Math.random() * 360)}, 70%, 80%)`;
+}
+
+const MAX_COLUMN_WIDTH = 256;
+
+const getNumberOfColumns = (width: number) => {
+  return Math.ceil(window.innerWidth / MAX_COLUMN_WIDTH)
+}
 
 // --- app ---
 
+const BOXES = generateBoxes(120);
+
+
 export default function App() {
   const [boxWidth] = React.useState(120);
-  const [boxes] = React.useState(generateBoxes(120));
-  const [diagnol, setDiagnol] = React.useState(generateBoxes(120));
+  const [boxes] = React.useState([...BOXES]);
+  const [diagnol, setDiagnol] = React.useState([...BOXES]);
   const [count, setCount] = React.useState(0);
 
   const getCachedHeight = (id: number) => {
@@ -87,13 +110,14 @@ export default function App() {
     setDiagnol(newDiagnol);
   };
 
+  const numberOfColumns = useNumberOfColumns();
+
   return (
     <div className="w-full p-4 flex flex-col flex-1">
       <div
-        className="masonry-container"
         style={{
-          columnWidth: '100%',
-          columnCount: 6,
+          columnWidth: "100%",
+          columnCount: numberOfColumns,
           columnGap: "1rem",
           width: "100%",
         }}
@@ -105,7 +129,6 @@ export default function App() {
               onDiagnol={(diagonal) => setDiagnolForId(id, diagonal)}
               scaledDiagonal={diagnol.at(id)}
               height={getRandomHeight()}
-              // height={getCachedHeight(id)}
               width={boxWidth}
               color={getRandomColor()}
               key={`box-${id}`}
