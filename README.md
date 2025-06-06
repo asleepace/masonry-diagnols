@@ -1,22 +1,13 @@
-# bun-react-tailwind-template
+# Masonry Diagnols
 
-To install dependencies:
+To get started run the following:
 
 ```bash
+git clone https://github.com/asleepace/masonry-diagnols
+cd ./masonry-diagnols
 bun install
+bun run dev
 ```
+The visit the following url:
 
-To start a development server:
-
-```bash
-bun dev
-```
-
-To run for production:
-
-```bash
-bun start
-```
-
-This project was created using `bun init` in bun v1.2.10. [Bun](https://bun.sh) is a fast all-in-one JavaScript runtime.
-# masonry-diagnols
+http://localhost:3000/
