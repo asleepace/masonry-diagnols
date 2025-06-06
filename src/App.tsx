@@ -1,4 +1,4 @@
-import React from "react";
+import { useEffect, useState } from "react";
 import "./index.css";
 
 type BoxProps = {
@@ -14,8 +14,8 @@ type BoxProps = {
 // --- hooks --- 
 
 function useNumberOfColumns() {
-  const [numberOfColumns, setNumberOfColumns] = React.useState(getNumberOfColumns(window.innerWidth));
-  React.useEffect(() => {
+  const [numberOfColumns, setNumberOfColumns] = useState(getNumberOfColumns(window.innerWidth));
+  useEffect(() => {
     const handleResize = () => setNumberOfColumns(getNumberOfColumns(window.innerWidth));
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
@@ -35,7 +35,7 @@ const Box = (props: BoxProps) => (
         backgroundColor: props.color,
       }}
       ref={(box: HTMLDivElement) => {
-        if (!box || props.scaledDiagonal) return;
+        if (!box || !props.onDiagnol || props.scaledDiagonal) return;
         props.onDiagnol(getScaledDiagonal(box.clientWidth, box.clientHeight));
       }}
     >
@@ -49,10 +49,6 @@ const Box = (props: BoxProps) => (
 )
 
 // --- utils ---
-
-const generateBoxes = (count: number) => {
-  return new Array(count).fill(0).map((_, i) => i);
-};
 
 const getDiagonal = (width: number, height: number) => {
   return Math.sqrt(width * width + height * height);
@@ -85,16 +81,27 @@ const getNumberOfColumns = (width: number) => {
   return Math.ceil(window.innerWidth / MAX_COLUMN_WIDTH)
 }
 
+const generateBoxes = (count: number): BoxProps[] => {
+  return new Array(count).fill(0).map((_, i) => ({
+    index: i,
+    width: 120,
+    height: getRandomHeight(),
+    color: getRandomColor(),
+    onDiagnol: () => {},
+    onClick: () => {},
+  }));
+};
+
 // --- app ---
 
 const BOXES = generateBoxes(120);
 
 
 export default function App() {
-  const [boxWidth] = React.useState(120);
-  const [boxes] = React.useState([...BOXES]);
-  const [diagnol, setDiagnol] = React.useState([...BOXES]);
-  const [count, setCount] = React.useState(0);
+  const [boxWidth] = useState(120);
+  const [boxes] = useState([...BOXES]);
+  const [diagnol, setDiagnol] = useState(BOXES.map(() => 0));
+  const [count, setCount] = useState(0);
 
   const getCachedHeight = (id: number) => {
     const scale = diagnol.at(id);
@@ -122,17 +129,16 @@ export default function App() {
           width: "100%",
         }}
       >
-        {boxes.map((id) => {
+        {boxes.map((box, id) => {
           return (
             <Box
               onClick={() => setCount(count + 1)}
-              onDiagnol={(diagonal) => setDiagnolForId(id, diagonal)}
-              scaledDiagonal={diagnol.at(id)}
-              height={getRandomHeight()}
+
+              height={box.height}
               width={boxWidth}
-              color={getRandomColor()}
-              key={`box-${id}`}
-              index={id}
+              color={box.color}
+              key={`box-${box.index}`}
+              index={box.index}
             />
           );
         })}
