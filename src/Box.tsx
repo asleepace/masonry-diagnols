@@ -7,14 +7,16 @@ export type BoxProps = {
   height: number
   color: string
   scaledDiagonal?: number
-  onDiagnol?: (scale: number) => void
+  onLayout?: ({ width, height }: { width: number; height: number }) => void
 }
 
 export default function Box(props: BoxProps) {
   const onRefCallback = (box: HTMLDivElement) => {
-    if (!box || !props.onDiagnol || props.scaledDiagonal) return
-    const diagonal = getScaledDiagonal(box.clientWidth, box.clientHeight)
-    props.onDiagnol(diagonal)
+    if (!box || !props.onLayout) return
+    props.onLayout({
+      width: box.clientWidth,
+      height: box.clientHeight,
+    })
   }
 
   return (

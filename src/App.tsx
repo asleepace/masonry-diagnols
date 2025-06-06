@@ -7,20 +7,6 @@ import { useDistributedBoxes } from './useDistributedBoxes'
 
 // --- utils ---
 
-export const getDiagonal = (width: number, height: number) => {
-  return Math.sqrt(width * width + height * height)
-}
-
-export const getWindowDiagonal = () => {
-  return getDiagonal(window.innerWidth, window.innerHeight)
-}
-
-export const getScaledDiagonal = (width: number, height: number) => {
-  const windowDiagonal = getWindowDiagonal()
-  const boxDiagonal = getDiagonal(width, height)
-  return boxDiagonal / windowDiagonal
-}
-
 const getRandomHeight = ({ min = 80, max = 160 }: { min?: number; max?: number } = {}) => {
   return min + Math.floor(Math.random() * max)
 }
@@ -44,23 +30,51 @@ const generateBoxes = (count: number): BoxProps[] => {
 
 // --- app ---
 
+export const getDiagonal = ({ width = 0, height = 0 }) => {
+  return Math.sqrt(width * width + height * height)
+}
+
+export const getWindowDiagonal = () => {
+  return getDiagonal({ width: window.innerWidth, height: window.innerHeight })
+}
+
+export const getScaledDiagonal = (width: number, height: number) => {
+  const windowDiagonal = getWindowDiagonal()
+  const boxDiagonal = getDiagonal({ width, height })
+  return boxDiagonal / windowDiagonal
+}
+
 const BOXES = generateBoxes(40)
-const CACHED_DIAGNOLS = BOXES.map(() => 0)
+const CACHED = BOXES.map(() => 0)
+
+const setCachedBox = (box: BoxProps, size: { width: number; height: number }) => {
+  if (box.id !== 0) return
+  const windowWidth = window.innerWidth
+  const boxHeight = size.height
+  const ratio = Math.ceil((boxHeight / windowWidth) * 1000)
+  CACHED[box.id] = ratio
+
+  console.table({
+    width: size.width,
+    height: size.height,
+    windowWidth: window.innerWidth,
+    windowHeight: window.innerHeight,
+    ratio,
+    boxHeight: Math.floor((ratio * window.innerWidth) / 1000),
+  })
+}
+
+const getCachedHeight = (id: number) => {
+  const ratio = CACHED[id]
+  if (!ratio) return undefined
+  return Math.floor((ratio * window.innerWidth) / 1000)
+}
 
 export default function App() {
-  const [boxWidth] = useState(120)
-  const [boxes] = useState([...BOXES])
-  const [count, setCount] = useState(0)
-
-  const getCachedHeight = (id: number) => {}
-
-  const setDiagnolForId = (id: number, scale: number) => {
-    CACHED_DIAGNOLS[id] = scale
-  }
-
+  const [boxes, setBoxes] = useState([...BOXES])
   const numberOfColumns = useNumberOfColumns({ maxWidth: MAX_COLUMN_WIDTH })
-
   const sortedBoxes = useDistributedBoxes({ numberOfColumns, boxes })
+  console.log('[app] numberOfColumns:', numberOfColumns)
 
   return (
     <div className='w-full p-4 flex flex-col flex-1'>
@@ -75,11 +89,10 @@ export default function App() {
         {sortedBoxes.map((box, id) => {
           return (
             <Box
-              onDiagnol={scale => setDiagnolForId(id, scale)}
-              scaledDiagonal={CACHED_DIAGNOLS.at(id)}
-              height={box.height}
+              onLayout={size => setCachedBox(box, size)}
               minWidth={MIN_BOX_WIDTH}
               maxWidth={MAX_COLUMN_WIDTH}
+              height={getCachedHeight(box.id) || box.height}
               color={box.color}
               key={`box-${box.id}`}
               id={box.id}
